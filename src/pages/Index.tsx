@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
 import { UploadZone } from "@/components/UploadZone";
 import { PreviewSection } from "@/components/PreviewSection";
+import { UserModelCard } from "@/components/UserModelCard";
 import { toast } from "sonner";
 import styledPreview from "@/assets/styled-preview.jpg";
 import { generateUserModel, StructuredUserModel } from "@/pages/api/generateUserModel.ts";
@@ -123,6 +124,17 @@ const Index = () => {
             onBodyShapeChange={setBodyShape}
           />
         </motion.div>
+
+        {/* User Model Results */}
+        {userModel && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-md mx-auto mt-8"
+          >
+            <UserModelCard userModel={userModel} />
+          </motion.div>
+        )}
 
         {/* Preview Section */}
         <PreviewSection
