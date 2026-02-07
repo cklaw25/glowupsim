@@ -45,9 +45,9 @@ Deno.serve(async (req) => {
 
     console.log("Using prompt:", prompt);
 
-    // Use fal.ai's image-to-image API (flux or similar)
-    // We'll use the fal-ai/flux/dev/image-to-image endpoint for best quality
-    const response = await fetch("https://queue.fal.run/fal-ai/flux/dev/image-to-image", {
+    // Use fal.ai's synchronous API endpoint (not the queue endpoint)
+    // Using fal.run instead of queue.fal.run for immediate results
+    const response = await fetch("https://fal.run/fal-ai/flux/dev/image-to-image", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -59,8 +59,7 @@ Deno.serve(async (req) => {
         strength: 0.65, // Keep person's features but allow clothing change
         num_inference_steps: 28,
         guidance_scale: 7.5,
-        image_size: "landscape_4_3",
-        sync_mode: true // Wait for result
+        image_size: "landscape_4_3"
       })
     });
 
