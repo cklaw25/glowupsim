@@ -6,7 +6,7 @@ import { UploadZone } from "@/components/UploadZone";
 import { PreviewSection } from "@/components/PreviewSection";
 import { toast } from "sonner";
 import styledPreview from "@/assets/styled-preview.jpg";
-import { generateUserModel } from "@/pages/api/generateUserModel.ts";
+import { generateUserModel, StructuredUserModel } from "@/pages/api/generateUserModel.ts";
 
 const Index = () => {
   // Person state
@@ -23,6 +23,7 @@ const Index = () => {
 
   const [height, setHeight] = useState("");
   const [bodyShape, setBodyShape] = useState("");
+  const [userModel, setUserModel] = useState<StructuredUserModel | null>(null);
 
   const handlePersonImageUpload = useCallback((file: File) => {
     const reader = new FileReader();
@@ -53,30 +54,35 @@ const Index = () => {
     setIsGenerating(true);
     toast.info("Analyzing your appearance...");
 
-    // 1. Call your AI function
-    const userModel = await generateUserModel({
+    // 1. Call the AI analysis function
+    const result = await generateUserModel({
       personImage,
       personDescription,
       clothingImage,
       clothingDescription,
-      // later you can add height, bodyShape, etc.
+      height,
+      bodyShape,
     });
 
-    console.log("User model:", userModel);
+    console.log("AI Analysis result:", result);
 
     // 2. Handle errors
-    if (!userModel.success) {
-      toast.error(userModel.error || "Failed to generate user model");
+    if (!result.success || !result.userModel) {
+      toast.error(result.error || "Failed to analyze your appearance");
       setIsGenerating(false);
       return;
     }
 
-    // 3. TEMPORARY: still show your placeholder image
+    // 3. Store the structured user model
+    setUserModel(result.userModel);
+    console.log("Structured User Model:", JSON.stringify(result.userModel, null, 2));
+
+    // 4. TEMPORARY: still show your placeholder image
     // (until we connect the virtual try-on model)
     setGeneratedImage(styledPreview);
 
     setIsGenerating(false);
-    toast.success("Your styled look is ready!");
+    toast.success("Analysis complete! Your styled look is ready!");
   };
 
   return (
