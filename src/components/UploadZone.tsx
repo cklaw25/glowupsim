@@ -13,6 +13,8 @@ interface UploadZoneProps {
   description: string;
   uploadedImage: string | null;
   onRemoveImage: () => void;
+  onHeightChange?: (height: string) => void;
+  onBodyShapeChange?: (shape: string) => void;
 }
 
 export const UploadZone = ({
@@ -24,6 +26,8 @@ export const UploadZone = ({
   description,
   uploadedImage,
   onRemoveImage,
+  onHeightChange,
+  onBodyShapeChange,
 }: UploadZoneProps) => {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -143,18 +147,30 @@ export const UploadZone = ({
         className="min-h-[100px] resize-none bg-card border-border focus:border-primary focus:ring-primary/20 rounded-xl"
       />
 
-      {/* extra fields to add */}
-      <label>your height (cm)</label>
-      <input type="number" placeholders="e.g : 180" onChange={(e) => onHeightChange(e.target.value)} />
+      {/* Extra fields for clothing zone */}
+      {onHeightChange && onBodyShapeChange && (
+        <>
+          <label className="text-sm text-muted-foreground">Your height (cm)</label>
+          <input 
+            type="number" 
+            placeholder="e.g: 180" 
+            onChange={(e) => onHeightChange(e.target.value)}
+            className="flex h-10 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          />
 
-      <label>body shape</label>
-      <select onChange={(e) => onBodyShapeChange(e.target.value)}>
-        <option value="">Select</option>
-        <option value="pear">Pear</option>
-        <option value="hourglass">Hourglass</option>
-        <option value="rectangle">Rectangle</option>
-        <option value="inverted">Inverted triangle</option>
-      </select>
+          <label className="text-sm text-muted-foreground">Body shape</label>
+          <select 
+            onChange={(e) => onBodyShapeChange(e.target.value)}
+            className="flex h-10 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          >
+            <option value="">Select</option>
+            <option value="pear">Pear</option>
+            <option value="hourglass">Hourglass</option>
+            <option value="rectangle">Rectangle</option>
+            <option value="inverted">Inverted triangle</option>
+          </select>
+        </>
+      )}
     </motion.div>
   );
 };
