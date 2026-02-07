@@ -6,6 +6,7 @@ import { UploadZone } from "@/components/UploadZone";
 import { PreviewSection } from "@/components/PreviewSection";
 import { toast } from "sonner";
 import styledPreview from "@/assets/styled-preview.jpg";
+import { generateUserModel } from "@/lib/generateUserModel";
 
 const Index = () => {
   // Person state
@@ -50,13 +51,30 @@ const Index = () => {
     }
 
     setIsGenerating(true);
-    toast.info("Creating your styled look...");
+    toast.info("Analyzing your appearance...");
 
-    // Simulate AI processing (replace with actual AI integration)
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    // 1. Call your AI function
+    const userModel = await generateUserModel({
+      personImage,
+      personDescription,
+      clothingImage,
+      clothingDescription,
+      // later you can add height, bodyShape, etc.
+    });
 
-    // For demo, we'll show the generated styled preview
+    console.log("User model:", userModel);
+
+    // 2. Handle errors
+    if (!userModel.success) {
+      toast.error(userModel.error || "Failed to generate user model");
+      setIsGenerating(false);
+      return;
+    }
+
+    // 3. TEMPORARY: still show your placeholder image
+    // (until we connect the virtual try-on model)
     setGeneratedImage(styledPreview);
+
     setIsGenerating(false);
     toast.success("Your styled look is ready!");
   };
