@@ -1,21 +1,3 @@
-// Generate user model for AI styling
-// This file handles the creation of user model data for virtual try-on
-
-export interface UserModelData {
-  personImage?: string;
-  personDescription?: string;
-  height?: string;
-  bodyShape?: string;
-  clothingImage?: string;
-  clothingDescription?: string;
-}
-
-export interface GeneratedResult {
-  success: boolean;
-  imageUrl?: string;
-  error?: string;
-}
-
 export const generateUserModel = async (data: UserModelData): Promise<GeneratedResult> => {
   try {
     const response = await fetch("/api/generateUserModel", {
