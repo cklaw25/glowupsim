@@ -7,9 +7,13 @@ import { PreviewSection } from "@/components/PreviewSection";
 import { UserModelCard } from "@/components/UserModelCard";
 import { toast } from "sonner";
 import styledPreview from "@/assets/styled-preview.jpg";
-import { generateUserModel, StructuredUserModel } from "@/pages/api/generateUserModel.ts";
+import { generateUserModel } from "@/pages/api/generateUserModel.ts";
+import { useUserModel } from "@/contexts/UserModelContext";
 
 const Index = () => {
+  // Global user model from context
+  const { userModel, setUserModel } = useUserModel();
+
   // Person state
   const [personImage, setPersonImage] = useState<string | null>(null);
   const [personDescription, setPersonDescription] = useState("");
@@ -24,7 +28,6 @@ const Index = () => {
 
   const [height, setHeight] = useState("");
   const [bodyShape, setBodyShape] = useState("");
-  const [userModel, setUserModel] = useState<StructuredUserModel | null>(null);
 
   const handlePersonImageUpload = useCallback((file: File) => {
     const reader = new FileReader();
