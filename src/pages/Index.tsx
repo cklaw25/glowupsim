@@ -6,8 +6,8 @@ import { UploadZone } from "@/components/UploadZone";
 import { PreviewSection } from "@/components/PreviewSection";
 import { UserModelCard } from "@/components/UserModelCard";
 import { toast } from "sonner";
-import styledPreview from "@/assets/styled-preview.jpg";
 import { generateUserModel } from "@/pages/api/generateUserModel.ts";
+import { generateVirtualTryOn } from "@/pages/api/virtualTryon.ts";
 import { useUserModel } from "@/contexts/UserModelContext";
 
 const Index = () => {
@@ -56,10 +56,14 @@ const Index = () => {
     }
 
     setIsGenerating(true);
+    
+    // Run user model analysis and virtual try-on in parallel
+    const hasPersonImage = !!personImage;
+    
     toast.info("Analyzing your appearance...");
 
-    // 1. Call the AI analysis function
-    const result = await generateUserModel({
+    // 1. Always run user model analysis
+    const userModelPromise = generateUserModel({
       personImage,
       personDescription,
       clothingImage,
@@ -68,25 +72,48 @@ const Index = () => {
       bodyShape,
     });
 
-    console.log("AI Analysis result:", result);
+    // 2. If we have a person image, also run virtual try-on
+    let tryOnPromise: Promise<{ success: boolean; generatedImage?: string; error?: string }> | null = null;
+    
+    if (hasPersonImage && clothingDescription.trim()) {
+      toast.info("Generating virtual try-on with fal.ai...");
+      tryOnPromise = generateVirtualTryOn({
+        personImage: personImage!,
+        clothingDescription,
+        clothingImage: clothingImage || undefined,
+      });
+    }
 
-    // 2. Handle errors
-    if (!result.success || !result.userModel) {
-      toast.error(result.error || "Failed to analyze your appearance");
+    // Wait for user model result
+    const userModelResult = await userModelPromise;
+    console.log("AI Analysis result:", userModelResult);
+
+    if (!userModelResult.success || !userModelResult.userModel) {
+      toast.error(userModelResult.error || "Failed to analyze your appearance");
       setIsGenerating(false);
       return;
     }
 
-    // 3. Store the structured user model
-    setUserModel(result.userModel);
-    console.log("Structured User Model:", JSON.stringify(result.userModel, null, 2));
+    // Store the structured user model
+    setUserModel(userModelResult.userModel);
+    console.log("Structured User Model:", JSON.stringify(userModelResult.userModel, null, 2));
 
-    // 4. TEMPORARY: still show your placeholder image
-    // (until we connect the virtual try-on model)
-    setGeneratedImage(styledPreview);
+    // Wait for virtual try-on result if it was started
+    if (tryOnPromise) {
+      const tryOnResult = await tryOnPromise;
+      console.log("Virtual try-on result:", tryOnResult);
+
+      if (tryOnResult.success && tryOnResult.generatedImage) {
+        setGeneratedImage(tryOnResult.generatedImage);
+        toast.success("Virtual try-on complete! See your new look below!");
+      } else {
+        toast.warning(tryOnResult.error || "Virtual try-on failed, but your profile was analyzed");
+      }
+    } else {
+      toast.success("Analysis complete! Upload a photo to see virtual try-on.");
+    }
 
     setIsGenerating(false);
-    toast.success("Analysis complete! Your styled look is ready!");
   };
 
   return (
