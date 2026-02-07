@@ -133,8 +133,7 @@ Respond ONLY with a valid JSON object:
       },
       body: JSON.stringify({
         model: "openai/gpt-5-mini",
-        messages: messages,
-        temperature: 0.4
+        messages: messages
       })
     });
 
