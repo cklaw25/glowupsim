@@ -1,3 +1,18 @@
+interface UserModelData {
+  personImage: string | null;
+  personDescription: string;
+  clothingImage: string | null;
+  clothingDescription: string;
+  height?: string;
+  bodyShape?: string;
+}
+
+interface GeneratedResult {
+  success: boolean;
+  error?: string;
+  imageUrl?: string;
+}
+
 export const generateUserModel = async (data: UserModelData): Promise<GeneratedResult> => {
   try {
     const response = await fetch("/api/generateUserModel", {
