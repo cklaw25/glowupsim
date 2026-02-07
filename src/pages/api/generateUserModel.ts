@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 interface UserModelData {
   personImage: string | null;
   personDescription: string;
@@ -7,22 +9,58 @@ interface UserModelData {
   bodyShape?: string;
 }
 
+export interface StructuredUserModel {
+  hasPhoto: boolean;
+  skinTone: string;
+  bodyShape: string;
+  heightCm: number | null;
+  ethnicity: string;
+  sizeEstimate: string;
+  notes: string;
+}
+
 interface GeneratedResult {
   success: boolean;
   error?: string;
-  imageUrl?: string;
+  userModel?: StructuredUserModel;
 }
 
 export const generateUserModel = async (data: UserModelData): Promise<GeneratedResult> => {
   try {
-    const response = await fetch("/api/generateUserModel", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+    console.log("Calling analyze-user edge function with data:", {
+      hasPersonImage: !!data.personImage,
+      personDescription: data.personDescription,
+      hasClothingImage: !!data.clothingImage,
+      clothingDescription: data.clothingDescription,
+      height: data.height,
+      bodyShape: data.bodyShape
     });
 
-    const result = await response.json();
-    return result;
+    const { data: result, error } = await supabase.functions.invoke("analyze-user", {
+      body: data,
+    });
+
+    if (error) {
+      console.error("Edge function error:", error);
+      return {
+        success: false,
+        error: error.message || "Failed to analyze user",
+      };
+    }
+
+    console.log("Edge function response:", result);
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error || "Analysis failed",
+      };
+    }
+
+    return {
+      success: true,
+      userModel: result.userModel,
+    };
   } catch (error) {
     console.error("Error generating user model:", error);
     return {
