@@ -6,7 +6,7 @@ import { UploadZone } from "@/components/UploadZone";
 import { PreviewSection } from "@/components/PreviewSection";
 import { toast } from "sonner";
 import styledPreview from "@/assets/styled-preview.jpg";
-import { generateUserModel } from "@/lib/generateUserModel";
+import { generateUserModel } from "@/pages/api/generateUserModel";
 
 const Index = () => {
   // Person state
