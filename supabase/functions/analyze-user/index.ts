@@ -1,10 +1,6 @@
-import { Hono } from "https://deno.land/x/hono@v4.3.11/mod.ts";
-
-const app = new Hono();
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 interface UserModelData {
@@ -26,13 +22,14 @@ interface StructuredUserModel {
   notes: string;
 }
 
-app.options("/*", (c) => {
-  return new Response("ok", { headers: corsHeaders });
-});
+Deno.serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
 
-app.post("/", async (c) => {
   try {
-    const data: UserModelData = await c.req.json();
+    const data: UserModelData = await req.json();
     console.log("Received user data:", JSON.stringify(data, null, 2));
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -166,16 +163,16 @@ Respond ONLY with a valid JSON object in this exact format:
 
     console.log("Generated user model:", JSON.stringify(result, null, 2));
 
-    return c.json({ success: true, userModel: result }, 200, corsHeaders);
+    return new Response(
+      JSON.stringify({ success: true, userModel: result }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
 
   } catch (error) {
     console.error("Error in analyze-user function:", error);
-    return c.json(
-      { success: false, error: error.message || "Failed to analyze user" },
-      500,
-      corsHeaders
+    return new Response(
+      JSON.stringify({ success: false, error: error.message || "Failed to analyze user" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
-
-Deno.serve(app.fetch);
