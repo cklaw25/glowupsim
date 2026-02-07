@@ -1,30 +1,33 @@
-import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { Header } from '@/components/Header';
-import { HeroSection } from '@/components/HeroSection';
-import { UploadZone } from '@/components/UploadZone';
-import { PreviewSection } from '@/components/PreviewSection';
-import { toast } from 'sonner';
-import styledPreview from '@/assets/styled-preview.jpg';
+import { useState, useCallback } from "react";
+import { motion } from "framer-motion";
+import { Header } from "@/components/Header";
+import { HeroSection } from "@/components/HeroSection";
+import { UploadZone } from "@/components/UploadZone";
+import { PreviewSection } from "@/components/PreviewSection";
+import { toast } from "sonner";
+import styledPreview from "@/assets/styled-preview.jpg";
 
 const Index = () => {
   // Person state
   const [personImage, setPersonImage] = useState<string | null>(null);
-  const [personDescription, setPersonDescription] = useState('');
+  const [personDescription, setPersonDescription] = useState("");
 
   // Clothing state
   const [clothingImage, setClothingImage] = useState<string | null>(null);
-  const [clothingDescription, setClothingDescription] = useState('');
+  const [clothingDescription, setClothingDescription] = useState("");
 
   // Generation state
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
 
+  const [height, setHeight] = useState("");
+  const [bodyShape, setBodyShape] = useState("");
+
   const handlePersonImageUpload = useCallback((file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       setPersonImage(e.target?.result as string);
-      toast.success('Photo uploaded successfully!');
+      toast.success("Photo uploaded successfully!");
     };
     reader.readAsDataURL(file);
   }, []);
@@ -33,23 +36,21 @@ const Index = () => {
     const reader = new FileReader();
     reader.onload = (e) => {
       setClothingImage(e.target?.result as string);
-      toast.success('Clothing image uploaded!');
+      toast.success("Clothing image uploaded!");
     };
     reader.readAsDataURL(file);
   }, []);
 
-  const isReady =
-    (personImage || personDescription.trim()) &&
-    (clothingImage || clothingDescription.trim());
+  const isReady = (personImage || personDescription.trim()) && (clothingImage || clothingDescription.trim());
 
   const handleGenerate = async () => {
     if (!isReady) {
-      toast.error('Please provide both your photo/description and clothing details');
+      toast.error("Please provide both your photo/description and clothing details");
       return;
     }
 
     setIsGenerating(true);
-    toast.info('Creating your styled look...');
+    toast.info("Creating your styled look...");
 
     // Simulate AI processing (replace with actual AI integration)
     await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -57,13 +58,13 @@ const Index = () => {
     // For demo, we'll show the generated styled preview
     setGeneratedImage(styledPreview);
     setIsGenerating(false);
-    toast.success('Your styled look is ready!');
+    toast.success("Your styled look is ready!");
   };
 
   return (
     <div className="min-h-screen hero-gradient">
       <Header />
-      
+
       <main className="container mx-auto px-4 pb-20">
         <HeroSection />
 
@@ -94,6 +95,8 @@ const Index = () => {
             description={clothingDescription}
             uploadedImage={clothingImage}
             onRemoveImage={() => setClothingImage(null)}
+            onHeightChange={setHeight}
+            onBodyShapeChange={setBodyShape}
           />
         </motion.div>
 
@@ -109,9 +112,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="py-8 border-t border-border">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-muted-foreground text-sm">
-            © 2024 StyleAI. Powered by artificial intelligence.
-          </p>
+          <p className="text-muted-foreground text-sm">© 2024 StyleAI. Powered by artificial intelligence.</p>
         </div>
       </footer>
     </div>

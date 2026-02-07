@@ -1,13 +1,13 @@
-import { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Image, X, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Upload, Image, X, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 interface UploadZoneProps {
   title: string;
   subtitle: string;
-  icon: 'person' | 'clothing';
+  icon: "person" | "clothing";
   onImageUpload: (file: File) => void;
   onDescriptionChange: (description: string) => void;
   description: string;
@@ -32,11 +32,11 @@ export const UploadZone = ({
       e.preventDefault();
       setIsDragging(false);
       const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith('image/')) {
+      if (file && file.type.startsWith("image/")) {
         onImageUpload(file);
       }
     },
-    [onImageUpload]
+    [onImageUpload],
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -70,7 +70,7 @@ export const UploadZone = ({
 
       {/* Image Upload Area */}
       <div
-        className={`upload-zone cursor-pointer ${isDragging ? 'active' : ''}`}
+        className={`upload-zone cursor-pointer ${isDragging ? "active" : ""}`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -81,7 +81,7 @@ export const UploadZone = ({
           onChange={handleFileSelect}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         />
-        
+
         <AnimatePresence mode="wait">
           {uploadedImage ? (
             <motion.div
@@ -91,11 +91,7 @@ export const UploadZone = ({
               exit={{ opacity: 0, scale: 0.9 }}
               className="relative"
             >
-              <img
-                src={uploadedImage}
-                alt="Uploaded preview"
-                className="w-full h-48 object-cover rounded-xl"
-              />
+              <img src={uploadedImage} alt="Uploaded preview" className="w-full h-48 object-cover rounded-xl" />
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -115,18 +111,14 @@ export const UploadZone = ({
               className="flex flex-col items-center justify-center py-8 text-center"
             >
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                {icon === 'person' ? (
+                {icon === "person" ? (
                   <Image className="w-7 h-7 text-primary" />
                 ) : (
                   <Upload className="w-7 h-7 text-primary" />
                 )}
               </div>
-              <p className="text-foreground font-medium mb-1">
-                Drop your image here
-              </p>
-              <p className="text-muted-foreground text-sm">
-                or click to browse
-              </p>
+              <p className="text-foreground font-medium mb-1">Drop your image here</p>
+              <p className="text-muted-foreground text-sm">or click to browse</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -142,7 +134,7 @@ export const UploadZone = ({
       {/* Description Textarea */}
       <Textarea
         placeholder={
-          icon === 'person'
+          icon === "person"
             ? "Describe yourself: e.g., 'Tall woman with brown hair, athletic build...'"
             : "Describe the clothing: e.g., 'Elegant red evening dress with lace details...'"
         }
@@ -150,6 +142,19 @@ export const UploadZone = ({
         onChange={(e) => onDescriptionChange(e.target.value)}
         className="min-h-[100px] resize-none bg-card border-border focus:border-primary focus:ring-primary/20 rounded-xl"
       />
+
+      {/* extra fields to add */}
+      <label>your height (cm)</label>
+      <input type="number" placeholders="e.g : 180" onChange={(e) => onHeightChange(e.target.value)} />
+
+      <label>body shape</label>
+      <select onChange={(e) => onBodyShapeChange(e.target.value)}>
+        <option value="">Select</option>
+        <option value="pear">Pear</option>
+        <option value="hourglass">Hourglass</option>
+        <option value="rectangle">Rectangle</option>
+        <option value="inverted">Inverted triangle</option>
+      </select>
     </motion.div>
   );
 };
