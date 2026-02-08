@@ -1,73 +1,98 @@
-# Welcome to your Lovable project
+# StyleAI - Virtual Try-On & Fashion Analysis
 
-## Project info
+An AI-powered virtual try-on application that lets you visualize how clothing looks on you without physically trying it on. Upload your photo, describe or upload clothing, and get instant AI-generated try-on images along with personalized style analysis.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+![StyleAI Preview](src/assets/styled-preview.jpg)
 
-## How can I edit this code?
+## ✨ Features
 
-There are several ways of editing your application.
+- **Virtual Try-On**: Upload your photo and see yourself wearing any described outfit using AI image generation
+- **Body Analysis**: Get personalized insights including skin tone, body shape, and size recommendations
+- **Dual Input**: Support for both image uploads and text descriptions for maximum flexibility
+- **Real-time Generation**: Fast AI processing with live progress feedback
 
-**Use Lovable**
+## 🛠️ Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- **Frontend**: React 18, TypeScript, Vite
+- **Styling**: Tailwind CSS, shadcn/ui components
+- **Animations**: Framer Motion
+- **Backend**: Supabase Edge Functions (Deno)
+- **AI Services**:
+  - [fal.ai](https://fal.ai) - Virtual try-on image generation (Flux model)
+  - Lovable AI Gateway - User analysis and style recommendations
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🚀 Getting Started
 
-**Use your preferred IDE**
+### Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js 18+ and npm
+- A [fal.ai](https://fal.ai) account for virtual try-on generation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Installation
 
-Follow these steps:
+1. **Clone the repository**
+   ```bash
+   git clone <your-repo-url>
+   cd <project-name>
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+3. **Set up environment variables**
+   
+   Create a `.env` file in the root directory:
+   ```env
+   VITE_SUPABASE_URL=your_supabase_url
+   VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+4. **Configure secrets** (for Edge Functions)
+   
+   The following secrets need to be configured in your Supabase project:
+   - `FAL_KEY` - Your fal.ai API key
+   - `LOVABLE_API_KEY` - Lovable AI Gateway key (auto-configured on Lovable Cloud)
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+5. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+   The app will be available at `http://localhost:8080`
+
+## 📁 Project Structure
+
+```
+├── src/
+│   ├── components/       # React components
+│   ├── contexts/         # React context providers
+│   ├── pages/            # Page components and API handlers
+│   ├── hooks/            # Custom React hooks
+│   └── integrations/     # Supabase client configuration
+├── supabase/
+│   └── functions/        # Edge Functions
+│       ├── analyze-user/ # User body analysis
+│       └── virtual-tryon/# AI try-on generation
+└── public/               # Static assets
 ```
 
-**Edit a file directly in GitHub**
+## 🔧 Available Scripts
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
 
-**Use GitHub Codespaces**
+## 🤝 Contributing
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## What technologies are used for this project?
+## 📄 License
 
-This project is built with:
+This project is open source and available under the [MIT License](LICENSE).
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Built with [Lovable](https://lovable.dev)
