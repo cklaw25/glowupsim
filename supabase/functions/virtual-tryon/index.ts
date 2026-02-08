@@ -54,48 +54,47 @@ Deno.serve(async (req) => {
       throw new Error("Person image is required for virtual try-on");
     }
 
-    // Build a detailed prompt for better face/body preservation
-    let prompt = "An ultra-realistic photograph of the EXACT SAME person in the reference image. ";
+    // Build a detailed prompt focused on CHANGING the clothing
+    let prompt = "TRANSFORM THE OUTFIT: Keep the exact same person, face, hair, and pose but COMPLETELY CHANGE their clothing to: ";
     
-    // Add user model details if available for better preservation
-    if (data.userModel) {
-      if (data.userModel.skinTone) {
-        prompt += `The person has ${data.userModel.skinTone} skin tone. `;
-      }
-      if (data.userModel.bodyShape) {
-        prompt += `They have a ${data.userModel.bodyShape} body shape. `;
-      }
-      if (data.userModel.ethnicity) {
-        prompt += `Their ethnicity appears to be ${data.userModel.ethnicity}. `;
-      }
-    }
-
-    // Add clothing details
-    prompt += `They are now wearing: ${data.clothingDescription}. `;
+    // Add clothing details FIRST (most important)
+    prompt += data.clothingDescription + ". ";
     
-    // Add clothing model details if available for more accurate clothing rendering
+    // Add clothing model details for more accurate clothing rendering
     if (data.clothingModel) {
       const clothingDetails: string[] = [];
-      if (data.clothingModel.color) clothingDetails.push(`${data.clothingModel.color} color`);
+      if (data.clothingModel.color) clothingDetails.push(`${data.clothingModel.color} colored`);
       if (data.clothingModel.material) clothingDetails.push(`made of ${data.clothingModel.material}`);
       if (data.clothingModel.pattern && data.clothingModel.pattern !== "solid") {
         clothingDetails.push(`with ${data.clothingModel.pattern} pattern`);
       }
       if (data.clothingModel.fit) clothingDetails.push(`${data.clothingModel.fit} fit`);
+      if (data.clothingModel.style) clothingDetails.push(`${data.clothingModel.style} style`);
       
       if (clothingDetails.length > 0) {
-        prompt += `The clothing is ${clothingDetails.join(", ")}. `;
+        prompt += `The new outfit should be ${clothingDetails.join(", ")}. `;
       }
     }
 
-    // Critical face preservation instructions
-    prompt += "CRITICAL: The person's face must be IDENTICAL to the original - same facial features, same expression, same eyes, nose, mouth, facial structure, and skin texture. ";
-    prompt += "Only the clothing should change. Maintain the exact same body proportions, pose, and background. ";
-    prompt += "Professional fashion photography, natural lighting, high resolution, photorealistic quality.";
+    // Add user model details for face preservation reference
+    if (data.userModel) {
+      if (data.userModel.skinTone) {
+        prompt += `The person has ${data.userModel.skinTone} skin. `;
+      }
+      if (data.userModel.ethnicity) {
+        prompt += `They appear to be ${data.userModel.ethnicity}. `;
+      }
+    }
+
+    // Critical instructions - emphasize clothing change
+    prompt += "IMPORTANT: The person's face, hair, and body shape must remain IDENTICAL. ";
+    prompt += "ONLY the clothing should be replaced with the new outfit described. ";
+    prompt += "Remove ALL original clothing and dress them in the NEW outfit. ";
+    prompt += "Professional fashion photography, studio lighting, high resolution.";
 
     console.log("Using enhanced prompt:", prompt);
 
-    // Use fal.ai's synchronous API endpoint with optimized settings for face preservation
+    // Use higher strength to actually change the clothing
     const response = await fetch("https://fal.run/fal-ai/flux/dev/image-to-image", {
       method: "POST",
       headers: {
@@ -105,9 +104,9 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         image_url: data.personImage,
         prompt: prompt,
-        strength: 0.55, // Lower strength for better face preservation
-        num_inference_steps: 35, // More steps for better quality
-        guidance_scale: 8.5, // Higher guidance for prompt adherence
+        strength: 0.78, // Higher strength to change clothing while preserving face
+        num_inference_steps: 40, // More steps for better quality
+        guidance_scale: 9.5, // Higher guidance for stronger prompt adherence
         image_size: "landscape_4_3"
       })
     });
