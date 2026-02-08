@@ -146,7 +146,16 @@ Deno.serve(async (req) => {
     // Fetch the image and convert to base64 for frontend display
     const imageResponse = await fetch(generatedImageUrl);
     const imageBuffer = await imageResponse.arrayBuffer();
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
+    
+    // Convert to base64 in chunks to avoid stack overflow with large images
+    const uint8Array = new Uint8Array(imageBuffer);
+    let binaryString = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.slice(i, i + chunkSize);
+      binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    const base64Image = btoa(binaryString);
     const dataUrl = `data:image/png;base64,${base64Image}`;
 
     console.log("Successfully generated virtual try-on image with face preservation");
