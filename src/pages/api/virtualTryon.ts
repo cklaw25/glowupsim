@@ -1,9 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
+import { StructuredUserModel } from "@/pages/api/generateUserModel";
+import { StructuredClothingModel } from "@/pages/api/generateClothingModel";
 
 interface VirtualTryOnData {
   personImage: string;
   clothingDescription: string;
   clothingImage?: string;
+  userModel?: StructuredUserModel | null;
+  clothingModel?: StructuredClothingModel | null;
 }
 
 interface VirtualTryOnResult {
@@ -17,11 +21,31 @@ export const generateVirtualTryOn = async (data: VirtualTryOnData): Promise<Virt
     console.log("Calling virtual-tryon edge function with data:", {
       hasPersonImage: !!data.personImage,
       hasClothingImage: !!data.clothingImage,
-      clothingDescription: data.clothingDescription
+      clothingDescription: data.clothingDescription,
+      hasUserModel: !!data.userModel,
+      hasClothingModel: !!data.clothingModel
     });
 
     const { data: result, error } = await supabase.functions.invoke("virtual-tryon", {
-      body: data,
+      body: {
+        personImage: data.personImage,
+        clothingDescription: data.clothingDescription,
+        clothingImage: data.clothingImage,
+        userModel: data.userModel ? {
+          skinTone: data.userModel.skinTone,
+          bodyShape: data.userModel.bodyShape,
+          heightCm: data.userModel.heightCm,
+          ethnicity: data.userModel.ethnicity
+        } : undefined,
+        clothingModel: data.clothingModel ? {
+          category: data.clothingModel.category,
+          color: data.clothingModel.color,
+          pattern: data.clothingModel.pattern,
+          material: data.clothingModel.material,
+          fit: data.clothingModel.fit,
+          style: data.clothingModel.style
+        } : undefined
+      },
     });
 
     if (error) {

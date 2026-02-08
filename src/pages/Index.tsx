@@ -5,14 +5,18 @@ import { HeroSection } from "@/components/HeroSection";
 import { UploadZone } from "@/components/UploadZone";
 import { PreviewSection } from "@/components/PreviewSection";
 import { UserModelCard } from "@/components/UserModelCard";
+import { ClothingModelCard } from "@/components/ClothingModelCard";
 import { toast } from "sonner";
 import { generateUserModel } from "@/pages/api/generateUserModel.ts";
+import { generateClothingModel } from "@/pages/api/generateClothingModel.ts";
 import { generateVirtualTryOn } from "@/pages/api/virtualTryon.ts";
 import { useUserModel } from "@/contexts/UserModelContext";
+import { useClothingModel } from "@/contexts/ClothingModelContext";
 
 const Index = () => {
-  // Global user model from context
+  // Global models from context
   const { userModel, setUserModel } = useUserModel();
+  const { clothingModel, setClothingModel } = useClothingModel();
 
   // Person state
   const [personImage, setPersonImage] = useState<string | null>(null);
@@ -57,12 +61,12 @@ const Index = () => {
 
     setIsGenerating(true);
     
-    // Run user model analysis and virtual try-on in parallel
     const hasPersonImage = !!personImage;
+    const hasClothingInput = clothingImage || clothingDescription.trim();
     
-    toast.info("Analyzing your appearance...");
+    toast.info("Analyzing your appearance and clothing...");
 
-    // 1. Always run user model analysis
+    // Run all analysis in parallel
     const userModelPromise = generateUserModel({
       personImage,
       personDescription,
@@ -72,21 +76,21 @@ const Index = () => {
       bodyShape,
     });
 
-    // 2. If we have a person image, also run virtual try-on
-    let tryOnPromise: Promise<{ success: boolean; generatedImage?: string; error?: string }> | null = null;
-    
-    if (hasPersonImage && clothingDescription.trim()) {
-      toast.info("Generating virtual try-on with fal.ai...");
-      tryOnPromise = generateVirtualTryOn({
-        personImage: personImage!,
-        clothingDescription,
-        clothingImage: clothingImage || undefined,
-      });
-    }
+    const clothingModelPromise = hasClothingInput 
+      ? generateClothingModel({
+          clothingImage,
+          clothingDescription,
+        })
+      : Promise.resolve({ success: false, clothingModel: undefined });
 
-    // Wait for user model result
-    const userModelResult = await userModelPromise;
+    // Wait for both analyses to complete
+    const [userModelResult, clothingModelResult] = await Promise.all([
+      userModelPromise,
+      clothingModelPromise
+    ]);
+
     console.log("AI Analysis result:", userModelResult);
+    console.log("Clothing Analysis result:", clothingModelResult);
 
     if (!userModelResult.success || !userModelResult.userModel) {
       toast.error(userModelResult.error || "Failed to analyze your appearance");
@@ -98,16 +102,41 @@ const Index = () => {
     setUserModel(userModelResult.userModel);
     console.log("Structured User Model:", JSON.stringify(userModelResult.userModel, null, 2));
 
-    // Wait for virtual try-on result if it was started
-    if (tryOnPromise) {
-      const tryOnResult = await tryOnPromise;
+    // Store the clothing model if successful
+    if (clothingModelResult.success && clothingModelResult.clothingModel) {
+      setClothingModel(clothingModelResult.clothingModel);
+      console.log("Structured Clothing Model:", JSON.stringify(clothingModelResult.clothingModel, null, 2));
+    }
+
+    // Generate virtual try-on if we have a person image
+    if (hasPersonImage && hasClothingInput) {
+      toast.info("Generating virtual try-on with face preservation...");
+      
+      // Build a comprehensive clothing description from the model
+      let enhancedClothingDescription = clothingDescription;
+      if (clothingModelResult.success && clothingModelResult.clothingModel) {
+        const cm = clothingModelResult.clothingModel;
+        enhancedClothingDescription = `${cm.color} ${cm.category} with ${cm.pattern} pattern, made of ${cm.material}, ${cm.fit} fit, ${cm.style} style`;
+        if (clothingDescription) {
+          enhancedClothingDescription += `. Additional details: ${clothingDescription}`;
+        }
+      }
+
+      const tryOnResult = await generateVirtualTryOn({
+        personImage: personImage!,
+        clothingDescription: enhancedClothingDescription,
+        clothingImage: clothingImage || undefined,
+        userModel: userModelResult.userModel,
+        clothingModel: clothingModelResult.clothingModel,
+      });
+      
       console.log("Virtual try-on result:", tryOnResult);
 
       if (tryOnResult.success && tryOnResult.generatedImage) {
         setGeneratedImage(tryOnResult.generatedImage);
-        toast.success("Virtual try-on complete! See your new look below!");
+        toast.success("Virtual try-on complete! Your look is ready!");
       } else {
-        toast.warning(tryOnResult.error || "Virtual try-on failed, but your profile was analyzed");
+        toast.warning(tryOnResult.error || "Virtual try-on failed, but your profiles were analyzed");
       }
     } else {
       toast.success("Analysis complete! Upload a photo to see virtual try-on.");
@@ -155,14 +184,15 @@ const Index = () => {
           />
         </motion.div>
 
-        {/* User Model Results */}
-        {userModel && (
+        {/* Model Results - Side by Side */}
+        {(userModel || clothingModel) && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-md mx-auto mt-8"
+            className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mt-8"
           >
-            <UserModelCard userModel={userModel} />
+            {userModel && <UserModelCard userModel={userModel} />}
+            {clothingModel && <ClothingModelCard clothingModel={clothingModel} />}
           </motion.div>
         )}
 
