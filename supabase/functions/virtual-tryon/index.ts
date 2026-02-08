@@ -54,62 +54,78 @@ Deno.serve(async (req) => {
       throw new Error("Person image is required for virtual try-on");
     }
 
-    // Build a detailed prompt focused on CHANGING the clothing
-    let prompt = "TRANSFORM THE OUTFIT: Keep the exact same person, face, hair, and pose but COMPLETELY CHANGE their clothing to: ";
-    
-    // Add clothing details FIRST (most important)
-    prompt += data.clothingDescription + ". ";
-    
-    // Add clothing model details for more accurate clothing rendering
-    if (data.clothingModel) {
-      const clothingDetails: string[] = [];
-      if (data.clothingModel.color) clothingDetails.push(`${data.clothingModel.color} colored`);
-      if (data.clothingModel.material) clothingDetails.push(`made of ${data.clothingModel.material}`);
-      if (data.clothingModel.pattern && data.clothingModel.pattern !== "solid") {
-        clothingDetails.push(`with ${data.clothingModel.pattern} pattern`);
-      }
-      if (data.clothingModel.fit) clothingDetails.push(`${data.clothingModel.fit} fit`);
-      if (data.clothingModel.style) clothingDetails.push(`${data.clothingModel.style} style`);
+    let response;
+
+    // If we have a clothing image, use the dedicated virtual try-on model
+    if (data.clothingImage) {
+      console.log("Using IDM-VTON model with clothing image");
       
-      if (clothingDetails.length > 0) {
-        prompt += `The new outfit should be ${clothingDetails.join(", ")}. `;
+      response = await fetch("https://fal.run/fal-ai/idm-vton", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Key ${FAL_KEY}`
+        },
+        body: JSON.stringify({
+          human_image_url: data.personImage,
+          garment_image_url: data.clothingImage,
+          description: data.clothingDescription || "clothing item"
+        })
+      });
+    } else {
+      // Fall back to image-to-image with text prompt only
+      console.log("Using image-to-image model with text description only");
+      
+      let prompt = "TRANSFORM THE OUTFIT: Keep the exact same person, face, hair, and pose but COMPLETELY CHANGE their clothing to: ";
+      prompt += data.clothingDescription + ". ";
+      
+      if (data.clothingModel) {
+        const clothingDetails: string[] = [];
+        if (data.clothingModel.color) clothingDetails.push(`${data.clothingModel.color} colored`);
+        if (data.clothingModel.material) clothingDetails.push(`made of ${data.clothingModel.material}`);
+        if (data.clothingModel.pattern && data.clothingModel.pattern !== "solid") {
+          clothingDetails.push(`with ${data.clothingModel.pattern} pattern`);
+        }
+        if (data.clothingModel.fit) clothingDetails.push(`${data.clothingModel.fit} fit`);
+        if (data.clothingModel.style) clothingDetails.push(`${data.clothingModel.style} style`);
+        
+        if (clothingDetails.length > 0) {
+          prompt += `The new outfit should be ${clothingDetails.join(", ")}. `;
+        }
       }
+
+      if (data.userModel) {
+        if (data.userModel.skinTone) {
+          prompt += `The person has ${data.userModel.skinTone} skin. `;
+        }
+        if (data.userModel.ethnicity) {
+          prompt += `They appear to be ${data.userModel.ethnicity}. `;
+        }
+      }
+
+      prompt += "IMPORTANT: The person's face, hair, and body shape must remain IDENTICAL. ";
+      prompt += "ONLY the clothing should be replaced with the new outfit described. ";
+      prompt += "Remove ALL original clothing and dress them in the NEW outfit. ";
+      prompt += "Professional fashion photography, studio lighting, high resolution.";
+
+      console.log("Using text-only prompt:", prompt);
+
+      response = await fetch("https://fal.run/fal-ai/flux/dev/image-to-image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Key ${FAL_KEY}`
+        },
+        body: JSON.stringify({
+          image_url: data.personImage,
+          prompt: prompt,
+          strength: 0.78,
+          num_inference_steps: 40,
+          guidance_scale: 9.5,
+          image_size: "landscape_4_3"
+        })
+      });
     }
-
-    // Add user model details for face preservation reference
-    if (data.userModel) {
-      if (data.userModel.skinTone) {
-        prompt += `The person has ${data.userModel.skinTone} skin. `;
-      }
-      if (data.userModel.ethnicity) {
-        prompt += `They appear to be ${data.userModel.ethnicity}. `;
-      }
-    }
-
-    // Critical instructions - emphasize clothing change
-    prompt += "IMPORTANT: The person's face, hair, and body shape must remain IDENTICAL. ";
-    prompt += "ONLY the clothing should be replaced with the new outfit described. ";
-    prompt += "Remove ALL original clothing and dress them in the NEW outfit. ";
-    prompt += "Professional fashion photography, studio lighting, high resolution.";
-
-    console.log("Using enhanced prompt:", prompt);
-
-    // Use higher strength to actually change the clothing
-    const response = await fetch("https://fal.run/fal-ai/flux/dev/image-to-image", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Key ${FAL_KEY}`
-      },
-      body: JSON.stringify({
-        image_url: data.personImage,
-        prompt: prompt,
-        strength: 0.78, // Higher strength to change clothing while preserving face
-        num_inference_steps: 40, // More steps for better quality
-        guidance_scale: 9.5, // Higher guidance for stronger prompt adherence
-        image_size: "landscape_4_3"
-      })
-    });
 
     if (!response.ok) {
       const errorText = await response.text();
