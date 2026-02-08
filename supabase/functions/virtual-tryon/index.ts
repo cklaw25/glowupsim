@@ -136,8 +136,8 @@ Deno.serve(async (req) => {
     const result = await response.json();
     console.log("fal.ai response:", JSON.stringify(result, null, 2));
 
-    // Extract the generated image URL
-    const generatedImageUrl = result.images?.[0]?.url;
+    // Extract the generated image URL - IDM-VTON returns result.image.url, flux returns result.images[0].url
+    const generatedImageUrl = result.image?.url || result.images?.[0]?.url;
     
     if (!generatedImageUrl) {
       throw new Error("No image generated from fal.ai");
