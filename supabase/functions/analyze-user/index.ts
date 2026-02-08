@@ -56,29 +56,35 @@ Deno.serve(async (req) => {
       promptParts.push(`Self-reported body shape: ${data.bodyShape}`);
     }
 
-    const systemPrompt = `You are an expert AI fashion stylist and body analyst. Your task is to analyze the provided information and create a comprehensive user model for personalized fashion recommendations.
+    const systemPrompt = `You are an expert AI body and facial analyst. Your task is to analyze the provided information and create a comprehensive physical profile focusing ONLY on the person's body and facial features.
 
-CRITICAL INSTRUCTION: NEVER return "unknown" or null values unless absolutely impossible to estimate. Use all available context clues, cultural patterns, statistical averages, and logical inference to provide your best estimate for EVERY field.
+CRITICAL INSTRUCTION: 
+1. NEVER return "unknown" or null values unless absolutely impossible to estimate.
+2. DO NOT include ANY information about clothing, outfits, fashion, or what the person is wearing.
+3. Focus ONLY on physical attributes: face, body structure, skin, build, and proportions.
 
 For each attribute, follow these estimation rules:
 
-- skinTone: If not explicitly stated, infer from ethnicity hints, regional context, or common associations. Always include undertone (warm/cool/neutral). Examples: "fair, cool undertone", "medium-olive, warm undertone", "deep-brown, neutral undertone"
+- skinTone: Analyze the person's natural skin color and undertone. Always include undertone (warm/cool/neutral). Examples: "fair, cool undertone", "medium-olive, warm undertone", "deep-brown, neutral undertone", "light-medium, warm undertone"
 
-- bodyShape: If not described, use height, weight hints, or default to the most common body shape for the demographic. Must be one of: "hourglass", "pear", "apple", "rectangle", "inverted triangle"
+- bodyShape: Analyze body proportions and structure. Must be one of: "hourglass", "pear", "apple", "rectangle", "inverted triangle"
 
-- heightCm: If exact height not given, estimate based on:
+- heightCm: Estimate based on:
   - Gender hints (average male ~175cm, female ~162cm)
   - Descriptors like "tall", "short", "petite", "average"
-  - Regional/ethnic averages if ethnicity is known
+  - Visual proportions if image provided
   - ALWAYS provide a number, never null
 
-- ethnicity: Infer from names, language, regional context, or physical descriptions. If truly ambiguous, use "Mixed" or make your best educated guess.
+- ethnicity: Infer from facial features, skin tone, and physical characteristics. If truly ambiguous, use "Mixed" or make your best educated guess.
 
-- sizeEstimate: Estimate based on body shape, height, build descriptors ("slim", "athletic", "curvy", "plus-size"). Consider height when estimating - taller people often wear larger sizes. Must be: "XS", "S", "M", "L", "XL", "XXL"
+- sizeEstimate: Estimate based on body frame, build, and proportions. Must be: "XS", "S", "M", "L", "XL", "XXL"
 
-- notes: Provide helpful styling insights based on the estimated body type. Include recommendations for flattering silhouettes, proportions to balance, or features to highlight.
-
-Be confident in your estimates. Fashion stylists work with incomplete information all the time - your educated guesses are valuable.
+- notes: Describe ONLY physical characteristics - NO clothing or fashion advice. Include:
+  - Facial features (face shape, eyes, hair color/texture if visible)
+  - Body proportions and build (slim, athletic, curvy, broad shoulders, etc.)
+  - Distinguishing physical features
+  - Posture or stance observations
+  DO NOT mention any clothing, outfits, or styling recommendations.
 
 Respond ONLY with a valid JSON object:
 {
