@@ -108,38 +108,34 @@ const Index = () => {
       console.log("Structured Clothing Model:", JSON.stringify(clothingModelResult.clothingModel, null, 2));
     }
 
-    // Generate virtual try-on if we have a person image
-    if (hasPersonImage && hasClothingInput) {
-      toast.info("Generating virtual try-on with face preservation...");
-      
-      // Build a comprehensive clothing description from the model
-      let enhancedClothingDescription = clothingDescription;
-      if (clothingModelResult.success && clothingModelResult.clothingModel) {
-        const cm = clothingModelResult.clothingModel;
-        enhancedClothingDescription = `${cm.color} ${cm.category} with ${cm.pattern} pattern, made of ${cm.material}, ${cm.fit} fit, ${cm.style} style`;
-        if (clothingDescription) {
-          enhancedClothingDescription += `. Additional details: ${clothingDescription}`;
-        }
+    // Generate virtual try-on
+    toast.info(hasPersonImage ? "Generating virtual try-on..." : "Generating styled look from descriptions...");
+    
+    // Build a comprehensive clothing description from the model
+    let enhancedClothingDescription = clothingDescription;
+    if (clothingModelResult.success && clothingModelResult.clothingModel) {
+      const cm = clothingModelResult.clothingModel;
+      enhancedClothingDescription = `${cm.color} ${cm.category} with ${cm.pattern} pattern, made of ${cm.material}, ${cm.fit} fit, ${cm.style} style`;
+      if (clothingDescription) {
+        enhancedClothingDescription += `. Additional details: ${clothingDescription}`;
       }
+    }
 
-      const tryOnResult = await generateVirtualTryOn({
-        personImage: personImage!,
-        clothingDescription: enhancedClothingDescription,
-        clothingImage: clothingImage || undefined,
-        userModel: userModelResult.userModel,
-        clothingModel: clothingModelResult.clothingModel,
-      });
-      
-      console.log("Virtual try-on result:", tryOnResult);
+    const tryOnResult = await generateVirtualTryOn({
+      personImage: personImage || "",
+      clothingDescription: enhancedClothingDescription || clothingDescription,
+      clothingImage: clothingImage || undefined,
+      userModel: userModelResult.userModel,
+      clothingModel: clothingModelResult.clothingModel,
+    });
+    
+    console.log("Virtual try-on result:", tryOnResult);
 
-      if (tryOnResult.success && tryOnResult.generatedImage) {
-        setGeneratedImage(tryOnResult.generatedImage);
-        toast.success("Virtual try-on complete! Your look is ready!");
-      } else {
-        toast.warning(tryOnResult.error || "Virtual try-on failed, but your profiles were analyzed");
-      }
+    if (tryOnResult.success && tryOnResult.generatedImage) {
+      setGeneratedImage(tryOnResult.generatedImage);
+      toast.success("Your styled look is ready!");
     } else {
-      toast.success("Analysis complete! Upload a photo to see virtual try-on.");
+      toast.warning(tryOnResult.error || "Generation failed, but your profiles were analyzed");
     }
 
     setIsGenerating(false);

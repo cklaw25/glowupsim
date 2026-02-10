@@ -50,14 +50,10 @@ Deno.serve(async (req) => {
       throw new Error("FAL_KEY not configured");
     }
 
-    if (!data.personImage) {
-      throw new Error("Person image is required for virtual try-on");
-    }
-
     let response;
 
-    // If we have a clothing image, use the dedicated virtual try-on model
-    if (data.clothingImage) {
+    if (data.personImage && data.clothingImage) {
+      // Path 1: Both images - use IDM-VTON for garment transfer
       console.log("Using IDM-VTON model with clothing image");
       
       response = await fetch("https://fal.run/fal-ai/idm-vton", {
@@ -72,8 +68,8 @@ Deno.serve(async (req) => {
           description: data.clothingDescription || "clothing item"
         })
       });
-    } else {
-      // Fall back to image-to-image with text prompt only
+    } else if (data.personImage) {
+      // Path 2: Person image + text description - use image-to-image
       console.log("Using image-to-image model with text description only");
       
       let prompt = "TRANSFORM THE OUTFIT: Keep the exact same person, face, hair, and pose but COMPLETELY CHANGE their clothing to: ";
@@ -95,20 +91,12 @@ Deno.serve(async (req) => {
       }
 
       if (data.userModel) {
-        if (data.userModel.skinTone) {
-          prompt += `The person has ${data.userModel.skinTone} skin. `;
-        }
-        if (data.userModel.ethnicity) {
-          prompt += `They appear to be ${data.userModel.ethnicity}. `;
-        }
+        if (data.userModel.skinTone) prompt += `The person has ${data.userModel.skinTone} skin. `;
+        if (data.userModel.ethnicity) prompt += `They appear to be ${data.userModel.ethnicity}. `;
       }
 
       prompt += "IMPORTANT: The person's face, hair, and body shape must remain IDENTICAL. ";
-      prompt += "ONLY the clothing should be replaced with the new outfit described. ";
-      prompt += "Remove ALL original clothing and dress them in the NEW outfit. ";
-      prompt += "Professional fashion photography, studio lighting, high resolution.";
-
-      console.log("Using text-only prompt:", prompt);
+      prompt += "ONLY the clothing should be replaced. Professional fashion photography, high resolution.";
 
       response = await fetch("https://fal.run/fal-ai/flux/dev/image-to-image", {
         method: "POST",
@@ -123,6 +111,49 @@ Deno.serve(async (req) => {
           num_inference_steps: 40,
           guidance_scale: 9.5,
           image_size: "landscape_4_3"
+        })
+      });
+    } else {
+      // Path 3: Text-only (no person image) - use text-to-image generation
+      console.log("Using text-to-image model with descriptions only");
+      
+      let prompt = "A professional fashion photography portrait of a person wearing: ";
+      prompt += data.clothingDescription + ". ";
+
+      if (data.clothingModel) {
+        const clothingDetails: string[] = [];
+        if (data.clothingModel.color) clothingDetails.push(`${data.clothingModel.color} colored`);
+        if (data.clothingModel.material) clothingDetails.push(`made of ${data.clothingModel.material}`);
+        if (data.clothingModel.pattern && data.clothingModel.pattern !== "solid") {
+          clothingDetails.push(`with ${data.clothingModel.pattern} pattern`);
+        }
+        if (data.clothingModel.fit) clothingDetails.push(`${data.clothingModel.fit} fit`);
+        if (data.clothingModel.style) clothingDetails.push(`${data.clothingModel.style} style`);
+        if (clothingDetails.length > 0) {
+          prompt += `The outfit is ${clothingDetails.join(", ")}. `;
+        }
+      }
+
+      if (data.userModel) {
+        if (data.userModel.skinTone) prompt += `The person has ${data.userModel.skinTone} skin tone. `;
+        if (data.userModel.bodyShape) prompt += `They have a ${data.userModel.bodyShape} body shape. `;
+        if (data.userModel.ethnicity) prompt += `They appear to be ${data.userModel.ethnicity}. `;
+        if (data.userModel.heightCm) prompt += `They are approximately ${data.userModel.heightCm}cm tall. `;
+      }
+
+      prompt += "Full body shot, studio lighting, high resolution, realistic.";
+
+      response = await fetch("https://fal.run/fal-ai/flux/dev", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Key ${FAL_KEY}`
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          num_inference_steps: 40,
+          guidance_scale: 7.5,
+          image_size: "portrait_4_3"
         })
       });
     }
