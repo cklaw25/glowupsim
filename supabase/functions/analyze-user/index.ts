@@ -131,22 +131,42 @@ Respond ONLY with a valid JSON object:
 
     console.log("Calling Lovable AI Gateway...");
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-5-mini",
-        messages: messages
-      })
-    });
+    const maxRetries = 3;
+    let response: Response | null = null;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${LOVABLE_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: messages
+        })
+      });
 
-    if (!response.ok) {
+      if (response.ok) break;
+
       const errorText = await response.text();
-      console.error("AI Gateway error:", errorText);
+      console.error(`AI Gateway error (attempt ${attempt}/${maxRetries}):`, response.status, errorText);
+
+      if (response.status === 429 || response.status === 402) {
+        throw new Error(response.status === 429 ? "Rate limit exceeded, please try again later." : "Payment required, please add credits.");
+      }
+
+      if (attempt < maxRetries && (response.status >= 500)) {
+        const delay = attempt * 2000;
+        console.log(`Retrying in ${delay}ms...`);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+
       throw new Error(`AI Gateway error: ${response.status}`);
+    }
+
+    if (!response || !response.ok) {
+      throw new Error("AI Gateway failed after retries");
     }
 
     const aiResponse = await response.json();
